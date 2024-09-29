@@ -77,13 +77,6 @@ perform_updates() {
 
 uninstall_snap() {
     if command -v snap &> /dev/null; then
-        read -p "Are you sure you want to uninstall Snap? (y/n) " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "Aborting Snap uninstallation."
-            exit 0
-        fi
-
         echo "Uninstalling Snap..."
         systemctl stop snapd.service snapd.socket
         systemctl disable snapd.service snapd.socket
