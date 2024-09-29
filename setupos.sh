@@ -1,105 +1,59 @@
 #!/bin/bash
-clear
 
-# Log file
-LOG_FILE="/var/log/setupos.log"
-exec > >(tee -a "$LOG_FILE") 2>&1
+clear;
 
-# Function to print messages
-log_message() {
-    echo -e "\n=== $1 ==="
-}
+# Check if the script is running as root
+if [[ $EUID -ne 0 ]]; then
+    echo "This script must be run as root or with sudo."
+    exit 1
+else
+    echo "root..."
+fi
 
-# Function to check if the script is run as root
-check_root() {
-    if [ "$EUID" -ne 0 ]; then
-        echo "Error: This script must be run as root."
-        exit 1
-    fi
-}
+# Check if the current shell is bash
+if [ -n "$BASH_VERSION" ]; then
+    echo "bash..."
+else
+    echo "This script is not running in Bash."
+    exit 1
+fi
 
-# Function to check if the shell is Bash
-check_bash() {
-    if [[ -z "$BASH_VERSION" ]]; then
-        echo "Error: This script must be run in the Bash shell."
-        exit 1
-    fi
-}
-
-# Function to check if the OS is Ubuntu
-check_os() {
-    OS_NAME=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"')
-    if [[ "$OS_NAME" != "Ubuntu" ]]; then
-        echo "Error: This script is intended to run on Ubuntu. Detected: $OS_NAME."
-        exit 1
-    fi
-}
-
-# Function to show current system info
-show_system_info() {
-    log_message "Current System Information"
-    echo "Hostname: $(hostname)"
-    echo "OS: $OS_NAME"
-}
-
-# Function to confirm user input
-confirm_action() {
-    read -p "$1 (y/n): " -n 1 -r
-    echo  # Move to the next line after the prompt
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Operation cancelled."
-        exit 1
-    fi
-}
-
-# Function to perform package management
-update_system() {
-    echo "Updating the package list..."
-    if ! apt update; then
-        echo "Error: Failed to update package list."
-        exit 1
-    fi
-
-    echo "Upgrading the installed packages..."
-    if ! apt upgrade -y; then
-        echo "Error: Failed to upgrade packages."
-        exit 1
-    fi
-
-    echo "Removing unused packages..."
-    if ! apt autoremove -y; then
-        echo "Error: Failed to remove unused packages."
-        exit 1
-    fi
-}
-
-# Function to set the timezone
-set_timezone() {
-    local timezone=$1
-    echo "Setting the timezone to '$timezone'..."
-    if timedatectl set-timezone "$timezone"; then
-        echo "Timezone successfully set."
+# Check for Ubuntu by reading /etc/os-release
+if [[ -f /etc/os-release ]]; then
+    . /etc/os-release
+    if [[ "$ID" == "ubuntu" ]]; then
+        echo "ubuntu..."
     else
-        echo "Error: Failed to set timezone."
+        echo "This script is not running on Ubuntu."
+        exit 1
     fi
-}
+else
+    echo "Unable to determine the OS."
+    exit 1
+fi
 
-# Main script execution
-check_root
-check_bash
-check_os
-show_system_info
+# Check if the package manager is apt
+if command -v apt > /dev/null; then
+    echo "apt..."
+    # Place your commands that require apt here
+else
+    echo "This system does not use APT as the package manager. Exiting."
+    exit 1
+fi
 
-confirm_action "Do you want to proceed with system updates and upgrades?"
+# Checks passed
+echo "All checks have passed, proceeding..."
 
-update_system
+echo "Updating the package list..."
+sudo apt update &>/dev/null
+echo "Upgrading the installed packages..."
+sudo apt upgrade -y &>/dev/null
+echo "Removing unused packages..."
+sudo apt autoremove -y &>/dev/null
 
-confirm_action "Do you want to set the timezone to 'Europe/Vilnius'?"
-set_timezone "Europe/Vilnius"
+echo "Update and upgrade process was completed..."
 
-# Confirm changes
-log_message "Configuration Completed"
-echo "Log of actions can be found in $LOG_FILE."
-
-# Exit
+# Confirm script is finished
+echo "The setup has finished..."
+echo "Exiting..."
 exit 0
