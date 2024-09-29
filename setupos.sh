@@ -33,7 +33,6 @@ echo "OS: $OS_NAME"
 
 # Prompt for confirmation
 read -p "Do you want to proceed with system updates and upgrades? (y/n): " -n 1 -r
-echo    # Move to a new line
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo "Operation cancelled."
     exit 1
