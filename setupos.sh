@@ -44,11 +44,11 @@ fi
 # Checks passed
 echo "All checks have passed, proceeding..."
 
-echo "Updating the package list..."
+echo "Updating the system package list..."
 sudo apt update &>/dev/null
-echo "Upgrading the installed packages..."
+echo "Upgrading the installed system packages..."
 sudo apt upgrade -y &>/dev/null
-echo "Removing unused packages..."
+echo "Removing unused system packages..."
 sudo apt autoremove -y &>/dev/null
 
 echo "Update and upgrade process was completed..."
