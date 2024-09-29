@@ -45,7 +45,7 @@ show_system_info() {
 # Function to confirm user input
 confirm_action() {
     read -p "$1 (y/n): " -n 1 -r
-    echo
+    echo  # Move to the next line after the prompt
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         echo "Operation cancelled."
         exit 1
