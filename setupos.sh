@@ -89,7 +89,6 @@ if command -v snap &> /dev/null; then
     fi
     
     # Notify the user without output
-    exit 0
 else
     echo "Snap is not installed."
 fi
