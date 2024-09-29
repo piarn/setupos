@@ -1,5 +1,8 @@
 #!/bin/bash
+
 clear
+sleep 1  # Pause for 1 second
+
 # Check if the script is run as root
 if [ "$EUID" -ne 0 ]; then
     echo "Error: This script must be run as root."
