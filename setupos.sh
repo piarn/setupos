@@ -1,81 +1,35 @@
 #!/bin/bash
 
-# Stop on any error
-set -e
-
-# Check if the script is running as root
-if [[ "$EUID" -ne 0 ]]; then
-  echo "This script must be run as root. Please run it with sudo or as the root user."
-  exit 1
+# Check if the script is run as root
+if [ "$EUID" -ne 0 ]; then
+    echo "Error: This script must be run as root."
+    exit 1
 fi
 
-# Function to set hostname
-set_hostname() {
-  read -p "Enter the desired hostname for this system: " HOSTNAME
-  echo "Setting the hostname to $HOSTNAME..."
-  hostnamectl set-hostname "$HOSTNAME"
-  # Ensure hostname is added to /etc/hosts
-  echo "127.0.0.1 $HOSTNAME" >> /etc/hosts
-}
+# Check if the shell is Bash
+if [[ "$BASH" == "" ]]; then
+    echo "Error: This script must be run in the Bash shell."
+    exit 1
+fi
 
-# Function to set timezone
-set_timezone() {
-  echo "Setting the timezone to Europe/Vilnius..."
-  timedatectl set-timezone Europe/Vilnius
-}
+# Detect the Operating System
+OS_NAME=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"')
 
-# Function to update and upgrade the system
-update_system() {
-  echo "Updating package lists and upgrading the system..."
-  apt update && apt upgrade -y && apt dist-upgrade -y
-}
+# Check if the OS is Ubuntu
+if [[ "$OS_NAME" != "Ubuntu" ]]; then
+    echo "Error: This script is intended to run on Ubuntu."
+    exit 1
+fi
 
-# Function to debloat the system
-debloat_system() {
-  echo "Removing unnecessary packages and bloat..."
-  apt purge -y popularity-contest ubuntu-web-launchers apport whoopsie unattended-upgrades
-  
-  # Remove Snap and all Snap packages
-  if command -v snap &> /dev/null; then
-    echo "Removing Snap and all installed Snap packages..."
-    snap list | awk '{print $1}' | xargs -r snap remove --purge || true
-    apt purge -y snapd
+# Update and Upgrade the System
+echo "Updating the package list..."
+apt update > /dev/null 2>&1
 
-    # Prevent Snap from being reinstalled
-    cat <<EOF | tee /etc/apt/preferences.d/no-snap.pref
-Package: snapd
-Pin: release a=*
-Pin-Priority: -10
-EOF
+echo "Upgrading the installed packages..."
+apt upgrade -y > /dev/null 2>&1
 
-    # Clean up Snap directories
-    rm -rf ~/snap /var/cache/snapd /var/snap /var/lib/snapd
-  else
-    echo "Snap is not installed."
-  fi
+# Confirm changes
+echo "Configuration completed."
 
-  # Clean up unnecessary language packs
-  apt purge -y `dpkg -l | grep "language-pack" | awk '{print $2}'` || true
-
-  # Clean up after package removal
-  apt autoremove -y
-  apt clean
-}
-
-# Function to install base system packages
-install_base_packages() {
-  echo "Installing essential base system packages..."
-  apt install -y build-essential curl wget git htop neofetch vim nano \
-      software-properties-common net-tools apt-transport-https ca-certificates \
-      gnupg2 lsb-release dnsutils traceroute iftop python3 python3-pip \
-      golang rustc qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager
-}
-
-# Main execution block
-set_hostname
-set_timezone
-update_system
-debloat_system
-install_base_packages
-
-echo "System setup complete! Rebooting is recommended."
+# Exit
+exit 0
