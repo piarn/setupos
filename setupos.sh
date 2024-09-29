@@ -55,6 +55,45 @@ echo "All checks have passed, proceeding..."
 
 echo "Update and upgrade process was completed."
 
+# Check for if snap is installed
+if command -v snap &> /dev/null; then
+    echo "Snap is installed."
+    # Stop the Snap service
+    systemctl stop snapd.service > /dev/null 2>&1
+    systemctl stop snapd.socket > /dev/null 2>&1
+
+    # Disable the Snap service
+    systemctl disable snapd.service > /dev/null 2>&1
+    systemctl disable snapd.socket > /dev/null 2>&1
+    # Remove Snap and its associated packages
+    apt purge snapd -y > /dev/null 2>&1
+    
+    # Remove Snap cache and configuration
+    rm -rf /var/cache/snapd > /dev/null 2>&1
+    rm -rf /var/snap > /dev/null 2>&1
+    rm -rf /snap > /dev/null 2>&1
+    rm -rf ~/snap > /dev/null 2>&1
+    
+    # Optionally remove related packages (e.g., core, gnome-software-plugin-snap)
+    apt purge gnome-software-plugin-snap -y > /dev/null 2>&1
+    
+    # Autoremove to clean up unnecessary dependencies
+    apt autoremove -y > /dev/null 2>&1
+    
+    # Prevent Snap from being reinstalled by marking it as held
+    echo "snapd hold" | dpkg --set-selections > /dev/null 2>&1
+    
+    # Optionally remove the snapd repository (for Ubuntu)
+    if [ -f /etc/apt/sources.list.d/snapd.list ]; then
+        rm /etc/apt/sources.list.d/snapd.list > /dev/null 2>&1
+    fi
+    
+    # Notify the user without output
+    exit 0
+else
+    echo "Snap is not installed."
+fi
+
 # Confirm script is finished
 echo "The setup has finished..."
 echo "Exiting..."
