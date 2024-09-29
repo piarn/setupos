@@ -10,39 +10,47 @@ log_message() {
     echo -e "\n=== $1 ==="
 }
 
-# Check if the script is run as root
-if [ "$EUID" -ne 0 ]; then
-    echo "Error: This script must be run as root."
-    exit 1
-fi
+# Function to check if the script is run as root
+check_root() {
+    if [ "$EUID" -ne 0 ]; then
+        echo "Error: This script must be run as root."
+        exit 1
+    fi
+}
 
-# Check if the shell is Bash
-if [[ -z "$BASH_VERSION" ]]; then
-    echo "Error: This script must be run in the Bash shell."
-    exit 1
-fi
+# Function to check if the shell is Bash
+check_bash() {
+    if [[ -z "$BASH_VERSION" ]]; then
+        echo "Error: This script must be run in the Bash shell."
+        exit 1
+    fi
+}
 
-# Detect the Operating System
-OS_NAME=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"')
+# Function to check if the OS is Ubuntu
+check_os() {
+    OS_NAME=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"')
+    if [[ "$OS_NAME" != "Ubuntu" ]]; then
+        echo "Error: This script is intended to run on Ubuntu. Detected: $OS_NAME."
+        exit 1
+    fi
+}
 
-# Check if the OS is Ubuntu
-if [[ "$OS_NAME" != "Ubuntu" ]]; then
-    echo "Error: This script is intended to run on Ubuntu. Detected: $OS_NAME."
-    exit 1
-fi
+# Function to show current system info
+show_system_info() {
+    log_message "Current System Information"
+    echo "Hostname: $(hostname)"
+    echo "OS: $OS_NAME"
+}
 
-# Show current system info
-log_message "Current System Information"
-echo "Hostname: $(hostname)"
-echo "OS: $OS_NAME"
-
-# Prompt for confirmation to proceed
-read -p "Do you want to proceed with system updates and upgrades? (y/n): " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "Operation cancelled."
-    exit 1
-fi
+# Function to confirm user input
+confirm_action() {
+    read -p "$1 (y/n): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Operation cancelled."
+        exit 1
+    fi
+}
 
 # Function to perform package management
 update_system() {
@@ -65,20 +73,29 @@ update_system() {
     fi
 }
 
-# Update and Upgrade the System
-update_system
-
-# Optional timezone configuration
-read -p "Do you want to set the timezone to 'Europe/Vilnius'? (y/n): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "Setting the timezone to 'Europe/Vilnius'..."
-    if timedatectl set-timezone Europe/Vilnius; then
+# Function to set the timezone
+set_timezone() {
+    local timezone=$1
+    echo "Setting the timezone to '$timezone'..."
+    if timedatectl set-timezone "$timezone"; then
         echo "Timezone successfully set."
     else
         echo "Error: Failed to set timezone."
     fi
-fi
+}
+
+# Main script execution
+check_root
+check_bash
+check_os
+show_system_info
+
+confirm_action "Do you want to proceed with system updates and upgrades?"
+
+update_system
+
+confirm_action "Do you want to set the timezone to 'Europe/Vilnius'?"
+set_timezone "Europe/Vilnius"
 
 # Confirm changes
 log_message "Configuration Completed"
