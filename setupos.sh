@@ -55,7 +55,7 @@ check_apt() {
 
 perform_updates() {
     echo "Updating the system package list..."
-    if apt update; then
+    if apt update > /dev/null 2>&1; then
         log "System package list updated."
     else
         log "Failed to update package list."
@@ -63,7 +63,7 @@ perform_updates() {
     fi
 
     echo "Upgrading the installed system packages..."
-    if apt upgrade -y; then
+    if apt upgrade -y > /dev/null 2>&1; then
         log "System packages upgraded."
     else
         log "Failed to upgrade system packages."
@@ -71,7 +71,7 @@ perform_updates() {
     fi
 
     echo "Removing unused system packages..."
-    apt autoremove -y
+    apt autoremove -y > /dev/null 2>&1
     log "Unused packages removed."
 }
 
